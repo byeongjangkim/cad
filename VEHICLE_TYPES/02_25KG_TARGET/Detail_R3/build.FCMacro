@@ -1,0 +1,155 @@
+import FreeCAD as A, FreeCADGui as G, Part, math, json, traceback, csv
+from FreeCAD import Vector as V
+from PySide6 import QtCore
+OUT='/Users/byeongjangkim/MyProjects/Robots/cad/VEHICLE_TYPES/02_25KG_TARGET/Detail_R3'
+try:
+ source=A.openDocument('/Users/byeongjangkim/MyProjects/Robots/cad/ZD9021_FINAL_REVIEW/ZD9021_Integrated_Review.FCStd')
+ d=A.newDocument('TypeB_Detail_R3');d.Label='B형 상세 검토 R3 - 평지25kg / 미확정 부품 포함'
+ groups={}
+ for n,label in [('Frame','01 각관 프레임 및 크로스멤버'),('Suspension','02 신규 독립현가 및 쇼크'),('Hubs','03 신규 허브 및 베어링'),('Drive','04 D10 구동축 / 미선정 기어박스 공간'),('Deck','05 데크 지지 및 배터리'),('Equipment','06 검측장비 및 구동기 후보'),('Wheels','07 타이어 및 신규 플랜지 휠')]:
+  g=d.addObject('App::Part',n);g.Label=label;groups[n]=g
+ objects=[]
+ silver=(.65,.70,.74);blue=(.16,.38,.58);orange=(.95,.4,.06);black=(.10,.11,.13)
+ def box(x,y,z,l,w,h):return Part.makeBox(l,w,h,V(x,y,z))
+ def rod(a,b,r):
+  a=V(*a);delta=V(*b)-a;return Part.makeCylinder(r,delta.Length,a,delta.normalize())
+ def ring(r,ri,l,pos,axis):return Part.makeCylinder(r,l,V(*pos),V(*axis)).cut(Part.makeCylinder(ri,l,V(*pos),V(*axis)))
+ def tube(x,y,z,l,w,h,t,axis):
+  outer=box(x,y,z,l,w,h)
+  if axis=='X':inner=box(x-1,y+t,z+t,l+2,w-2*t,h-2*t)
+  elif axis=='Y':inner=box(x+t,y-1,z+t,l-2*t,w+2,h-2*t)
+  else:inner=box(x+t,y+t,z-1,l-2*t,w-2*t,h+2)
+  return outer.cut(inner)
+ def add(name,label,s,group,color=silver,evidence='CUSTOM preliminary geometry; joint detail and production tolerances pending'):
+  assert s.isValid() and s.Volume>0,name
+  o=d.addObject('Part::Feature',name);o.Label=label;o.Shape=s;groups[group].addObject(o)
+  o.addProperty('App::PropertyString','Evidence');o.Evidence=evidence
+  o.ViewObject.ShapeColor=color;o.ViewObject.LineColor=(.10,.10,.10);objects.append(o);return o
+ for side in (-1,1):
+  rail=tube(-223,side*70-10,65,446,20,40,2,'X')
+  for xx in (-185,185):rail=rail.cut(rod((xx,side*70-15,82),(xx,side*70+15,82),8))
+  add('Rail'+str(side).replace('-','N'),'6061-T6 각관 40H×20W×2 / L446',rail,'Frame',blue,'Beam estimate excludes halfshaft apertures; local reinforcement/FEA pending')
+ for i,x in enumerate((-140,-80,80,140)):
+  cross=tube(x-10,-60,75,20,120,30,2,'Y').cut(rod((x-11,0,90),(x+11,0,90),7))
+  add('Cross'+str(i),'크로스멤버 30H×20×2 / 축 통과공',cross,'Frame',blue)
+ add('Skid','하부 스키드 3mm',box(-223,-80,62,446,160,3),'Frame')
+ for side in (-1,1):add('Bumper'+str(side).replace('-','N'),'보호 범퍼 / 총길이550',tube(side*265-10,-90,75,20,180,20,2,'Y'),'Frame',blue)
+ # Four suspension stations. Main pivots are longitudinal and double-shear.
+ for x,tag in [(185,'F'),(-185,'R')]:
+  for s in (-1,1):
+   lab=tag+('L' if s>0 else 'R')
+   for level,z in [('Lower',68),('Upper',118)]:
+    # Triangular plate with central opening, 14 mm thick; not a scaled ZD arm.
+    pts=[V(x-32,s*78,z-7),V(x+32,s*78,z-7),V(x+10,s*145,z-7),V(x-10,s*145,z-7)]
+    outer=Part.Face(Part.makePolygon(pts+[pts[0]])).extrude(V(0,0,14))
+    holepts=[V(x-10,s*96,z-8),V(x+10,s*96,z-8),V(x,s*126,z-8)]
+    outer=outer.cut(Part.Face(Part.makePolygon(holepts+[holepts[0]])).extrude(V(0,0,16)))
+    # Pin bores along X, with ears on both ends of the inner hinge.
+    outer=outer.cut(rod((x-40,s*84,z),(x+40,s*84,z),4))
+    add(lab+level+'Arm',lab+' '+level+' 신규14mm 암',outer,'Suspension',blue)
+    add(lab+level+'Pin',lab+' '+level+' D8 힌지핀',rod((x-40,s*84,z),(x+40,s*84,z),4),'Suspension')
+    for e,xx in enumerate((x-39,x+33)):
+     yy=70 if s>0 else -94
+     ear=box(xx,yy,z-8,6,24,16).cut(rod((xx-1,s*84,z),(xx+7,s*84,z),4))
+     add(lab+level+'Ear'+str(e),lab+' 이중전단 피벗 귀',ear,'Suspension',silver)
+   # Box-section upright support ties upper/lower pivots to chassis crossmember.
+   add(lab+'PivotTower',lab+' 피벗 지지 타워',tube(x-25,s*60-10,75,50,20,62,3,'Z'),'Suspension',blue)
+   # Hub housing with two D28 bearing seats and middle D24 clearance.
+   pos=(x,s*133,72.5);axis=(0,s,0)
+   housing=ring(19,12,32,pos,axis)
+   for yy in (137,153):housing=housing.cut(Part.makeCylinder(14,8,V(x,s*yy,72.5),V(*axis)))
+   add(lab+'HubHousing',lab+' 새 허브 하우징 / D28 베어링 시트',housing,'Hubs',blue)
+   for i,yy in enumerate((137,153)):
+    add(lab+'Bearing'+str(i),lab+' 6001 규격 12×28×8',ring(14,6,8,(x,s*yy,72.5),axis),'Hubs',silver,'NSK6001 published12x28x8; radial rating5600N/static2370N for referenced open type; seal suffix and fits pending')
+   spindle=rod((x,s*124,72.5),(x,s*184,72.5),6)
+   add(lab+'Spindle',lab+' D12 새 허브 축',spindle,'Hubs',silver,'CUSTOM steel; certified yield>=350MPa required; shoulders, splines and fatigue pending')
+   flange=ring(18,6,5,(x,s*165,72.5),axis)
+   for i in range(6):
+    a=i*math.pi/3;flange=flange.cut(Part.makeCylinder(2.1,7,V(x+14*math.cos(a),s*164,72.5+14*math.sin(a)),V(*axis)))
+   add(lab+'HubFlange',lab+' 신규6볼트 휠 플랜지',flange,'Hubs',orange)
+   # Upright and steering axis are a concept linkage; balljoint articulation not solved.
+   upright=box(x-8,min(s*129,s*135),72.5,16,6,52)
+   add(lab+'Upright',lab+' 상하암 연결 업라이트',upright,'Hubs',blue)
+   for z in (68,118):add(lab+'Joint'+str(z),lab+' 구면조인트 공간',Part.makeSphere(7,V(x,s*140,z)),'Suspension',silver)
+   # Rated damper remains to be sourced; target spring is 4 wire /32 mean /10 active.
+   bot=(x,s*125,85);top=(x,s*75,180)
+   add(lab+'ShockLowerTab',lab+' 쇼크 하단 지지 공간',rod((x,s*125,68),bot,6),'Suspension',silver)
+   add(lab+'ShockShaft',lab+' D8 쇼크 로드',rod(bot,top,4),'Suspension')
+   delta=V(*top)-V(*bot);unit=delta;unit.normalize()
+   a=V(*bot)+unit*32;b=V(*top)-unit*10
+   add(lab+'ShockBody',lab+' 대구경 쇼크 D28 공간',rod(tuple(a),tuple(b),14),'Suspension',orange,'CUSTOM damper envelope; no supplier force-velocity or bottom-out rating selected')
+   # Catalog spring envelope separate from D28 damper. Wire section is not published here.
+   spring_length=json.load(open(OUT+'/calculations.json'))['suspension']['installed_spring_length_mm']
+   offset=V(28,0,0)
+   spring_bot=V(*bot)+offset
+   seat_offset=(math.sqrt(50**2+95**2)-spring_length)/2
+   seat=spring_bot+unit*seat_offset
+   spring=ring(8,4,spring_length,tuple(seat),tuple(unit))
+   obj=add(lab+'CatalogSpring',lab+' SWL16-100 외형 / 별치 스프링 후보',spring,'Suspension',(.25,.7,.3),'MISUMI SWL16-100: OD16 ID8 free100 k8.6N/mm; envelope only, not wire geometry. Source https://tw.misumi-ec.com/pdf/fa/2015/p2_395.pdf')
+   obj.ViewObject.Transparency=45
+   for end,pp in [('Lower',seat),('Upper',seat+unit*spring_length)]:
+    add(lab+'SpringSeat'+end,lab+' 스프링 받침 / 상세 체결 미완료',ring(10,3.1,3,tuple(pp-unit*1.5),tuple(unit)),'Suspension',silver)
+   add(lab+'SpringLowerBridge',lab+' 별치 스프링 하부 연결 브래킷',rod(bot,tuple(spring_bot),6),'Suspension',blue)
+   add(lab+'SpringUpperBridge',lab+' 별치 스프링 상부 연결 브래킷',rod(top,tuple(V(*top)+offset),6),'Suspension',blue)
+   add(lab+'SpringGuide',lab+' D6 가이드 예약공간 / 신축 구조 미완료',rod(tuple(spring_bot),tuple(V(*top)+offset),3),'Suspension',silver,'Envelope only; telescopic guide, retention and end stops not detailed')
+   add(lab+'ShockTower',lab+' 쇼크 타워 각관',tube(x-12,s*60-10,105,24,20,80,3,'Z'),'Suspension',blue)
+   add(lab+'ShockTab',lab+' 쇼크 상단 브래킷',rod((x,s*60,180),top,6),'Suspension',silver)
+   add(lab+'BumpStop',lab+' 범프스톱 공간 / 강성 미선정',box(x-10,min(s*103,s*119),104,20,16,10),'Suspension',black)
+   # New D10 halfshafts and articulated-joint reserved envelopes.
+   add(lab+'Halfshaft',lab+' 신규 D10 반축',rod((x,s*25,90),(x,s*124,72.5),5),'Drive',silver,'D10 torsion8Nm check; joint articulation, plunge and differential coupling pending')
+   for yy,zz in [(25,90),(124,72.5)]:add(lab+'CV'+str(yy),lab+' CV 조인트 예약공간',Part.makeSphere(10,V(x,s*yy,zz)),'Drive',black,'ENVELOPE ONLY; torque-rated CV not selected')
+   # New wheel for D12 spindle and 6-bolt flange, not OEM17mm hex.
+   tire=ring(72.5,48,69,(x,s*146,72.5),axis)
+   add(lab+'Tire',lab+' D145×69 타이어 공간',tire,'Wheels',black,'D145 retained; tire load rating for25kg must be obtained')
+   rim=ring(48,43.5,65,(x,s*148,72.5),axis)
+   dish=ring(43.5,6,5,(x,s*170,72.5),axis)
+   for i in range(6):
+    a=i*math.pi/3;dish=dish.cut(Part.makeCylinder(2.1,7,V(x+14*math.cos(a),s*169,72.5+14*math.sin(a)),V(*axis)))
+   add(lab+'Wheel',lab+' 신규 플랜지 휠 (17mmHex 미사용)',rim.fuse(dish),'Wheels',silver)
+ # Three differential positions are reserved for rated gearboxes, never labeled OEM certified.
+ for x,tag in [(-185,'Rear'),(0,'Center'),(185,'Front')]:
+  add(tag+'DiffEnvelope',tag+' 디퍼렌셜 예약공간 / 정격 미선정',box(x-23,-24,70,46,48,42),'Drive',(.55,.28,.16),'ENVELOPE ONLY: >=8Nm per output preliminary requirement; internal gears not designed')
+ for s in (-1,1):add('CenterShaft'+str(s).replace('-','N'),'신규 D10 종방향 구동축',rod((s*25,0,90),(s*160,0,90),5),'Drive')
+ add('ReducerEnvelope','추가4:1 감속기 예약공간 / 미선정',box(-65,-50,110,65,45,35),'Drive',(.55,.28,.16),'RESERVED volume only; 4:1 stage proposal, no production gearbox or gear meshing designed')
+ # Wide support bridge, 4 box posts and gussets instead of long thin round rods.
+ for x in (-150,150):
+  add('Outrigger'+str(x).replace('-','N'),'데크 지지 크로스빔 20×20×2',tube(x-10,-130,105,20,260,20,2,'Y'),'Deck',blue)
+  for y in (-120,120):
+   tag=str(x).replace('-','N')+str(y).replace('-','N')
+   add('DeckPost'+tag,'25×25×2 데크 기둥',tube(x-12.5,y-12.5,125,25,25,80,2,'Z'),'Deck',blue)
+   pts=[V(x-3,y,165),V(x-3,y,205),V(x-3,y+(35 if y<0 else -35),205)]
+   add('Gusset'+tag,'데크 기둥 삼각 보강판',Part.Face(Part.makePolygon(pts+[pts[0]])).extrude(V(6,0,0)),'Deck',silver)
+ add('SensorDeck','상부 데크400×300×4 / Z205',box(-200,-150,205,400,300,4),'Deck',silver)
+ add('BatteryShelf','배터리 선반190×110×4',box(-95,-55,145,190,110,4),'Deck',silver)
+ for x in (-90,90):add('BatterySupport'+str(x).replace('-','N'),'배터리 선반 지지대',tube(x-10,-60,105,20,120,40,2,'Y'),'Deck',blue)
+ add('Battery','배터리154×43×25',box(-77,-21.5,149,154,43,25),'Deck',black,'Gens ace3S5000mAh candidate; runtime and electrical architecture pending')
+ # Reuse only sensor and electronic envelopes; no inherited RC frame or hubs.
+ for group in [source.Equipment]:
+  for o in group.Group:
+   if o.TypeId=='Part::Feature':
+    sh=o.Shape.copy();sh.translate(V(0,0,-39));add('Equipment_'+o.Name,o.Label,sh,'Equipment',tuple(o.ViewObject.ShapeColor[:3]),o.Evidence)
+ for name in ['ESCTray','AXE_ESC','ESCFan']:
+  o=source.getObject(name);sh=o.Shape.copy();sh.translate(V(0,0,-39));add('Candidate_'+name,o.Label+' (후보)',sh,'Equipment',black,o.Evidence)
+ add('CandidateMotor','AXE4274 1700KV 후보 / 재선정 검토',Part.makeCylinder(21,74,V(-140,-30,100),V(1,0,0)),'Equipment',black,'Manufacturer D42x74; continuous torque not published; not coupled to reserved reduction gearbox')
+ # Steering package remains an explicit reserved component rather than a false linkage.
+ add('SteeringCandidate','XW540-T260-R 외형 비교 / 감속기 필요',box(70,-45,108,33.5,45.9,58.5),'Equipment',(.45,.2,.3),'ROBOTIS envelope33.5x58.5x45.9mm. Output location/mount holes not modeled. Direct drive rejected by scrub torque screen. https://emanual.robotis.com/docs/en/dxl/x/xw540-t260/')
+ sheet=d.addObject('Spreadsheet::Sheet','DesignBasis');sheet.Label='00 하중 계산 및 미완료 항목'
+ detail=json.load(open(OUT+'/calculations.json'))
+ for i,(k,v) in enumerate([('Total mass','25 kg'),('Mass budget','Vehicle+battery15 kg / payload10 kg'),('Speed target','0.1-2 m/s'),('Slope','0 degrees'),('Wheel speed rpm',str(detail['wheel_rpm'])),('Suspension MR',str(detail['suspension']['motion_ratio_at_static'])),('Spring candidate','MISUMI SWL16-100 / 8.6 N/mm'),('Wheel travel STUDY','-10 to +15 mm; stops not implemented'),('Steering screening Nm',str(detail['steering']['screening_torque_Nm'])),('35kgcm servo','Direct drive insufficient in current geometry'),('Drive ratio','48.895 ASSUMED; axle11T unverified'),('Gearbox and CV','UNSELECTED; no complete power path'),('Status','DETAIL STUDY; NOT FOR MANUFACTURE')],1):sheet.set('A'+str(i),k);sheet.set('B'+str(i),v)
+ d.recompute();A.closeDocument(source.Name);A.setActiveDocument(d.Name)
+ G.activateView('Gui::View3DInventor',True);view=G.activeDocument().mdiViewsOfType('Gui::View3DInventor')[0]
+ def snap(name):
+  G.updateGui();loop=QtCore.QEventLoop();QtCore.QTimer.singleShot(1000,loop.quit);loop.exec();view.saveImage(OUT+'/'+name+'.png',1800,1400,'White')
+ view.viewAxonometric();view.fitAll();snap('Platform')
+ groups['Equipment'].Visibility=False;groups['Deck'].Visibility=False;view.fitAll();snap('Structure')
+ groups['Equipment'].Visibility=True;groups['Deck'].Visibility=True;view.fitAll()
+ d.saveAs(OUT+'/TypeB_25kg_Detail_R3.FCStd')
+ Part.export(objects,OUT+'/TypeB_25kg_Detail_R3.step')
+ check=Part.Shape();check.read(OUT+'/TypeB_25kg_Detail_R3.step');assert check.isValid() and len(check.Solids)==sum(len(o.Shape.Solids) for o in objects)
+ with open(OUT+'/BOM.csv','w',newline='',encoding='utf-8-sig') as f:
+  w=csv.writer(f);w.writerow(['Name','Description','Evidence','Volume_mm3'])
+  for o in objects:w.writerow([o.Name,o.Label,o.Evidence,o.Shape.Volume])
+ json.dump({'geometry_and_step':'PASS','objects':len(objects),'scope':'Preliminary beam/shaft sizing only; not full assembly interference, motion, fatigue or25kg qualification','contains_unselected_envelopes':True},open(OUT+'/validation.json','w'),indent=2)
+ open(OUT+'/complete.txt','w').write('New structural model generated and STEP roundtrip checked')
+except Exception:
+ open(OUT+'/error.txt','w').write(traceback.format_exc());raise

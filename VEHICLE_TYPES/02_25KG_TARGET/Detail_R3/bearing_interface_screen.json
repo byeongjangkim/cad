@@ -1,0 +1,8 @@
+{
+  "assumed_peak_wheel_force_N": 367.875,
+  "assumed_bearing_span_mm": 16,
+  "assumed_overhang_mm": 23.5,
+  "outboard_reaction_N": 908.19140625,
+  "inboard_reaction_magnitude_N": 540.31640625,
+  "scope": "R3 dimensions sensitivity only; NOT actual Traxxas/GPM bearing arrangement"
+}

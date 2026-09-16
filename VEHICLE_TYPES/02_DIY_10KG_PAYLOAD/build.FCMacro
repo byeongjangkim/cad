@@ -1,0 +1,94 @@
+import FreeCAD as A, FreeCADGui as G, Part, math, json, pathlib, traceback
+from FreeCAD import Vector as V
+from PySide6 import QtCore
+OUT=pathlib.Path('/Users/byeongjangkim/MyProjects/Robots/cad/VEHICLE_TYPES/02_DIY_10KG_PAYLOAD')
+try:
+ d=A.newDocument('TypeB_DIY_10kg_R0');d.Label='B형 · 적재10kg · 4모터 전륜조향 · 배치검토 R0'
+ groups={}
+ for key,label in [('Frame','01 가공 샤시 · 잠정 치수'),('Motors','02 구매 모터 · 제조사 STEP'),('Suspension','03 구매 현가 후보 · 치수 미확인 공간모델'),('Drive','04 CV 및 연결부 · 인터페이스 미확정'),('Steering','05 전륜 조향 · 기구 배치 검토'),('Wheels','06 바퀴 · Ø160 공간 예약'),('Deck','07 가공 데크 및 지지대'),('Equipment','08 장비 및 배터리 · 공간 예약')]:
+  o=d.addObject('App::Part',key);o.Label=label;groups[key]=o
+ objects=[]
+ silver=(.68,.72,.76);blue=(.16,.4,.62);orange=(.93,.49,.13);black=(.13,.14,.16);purple=(.62,.36,.68)
+ def box(x,y,z,l,w,h):return Part.makeBox(l,w,h,V(x,y,z))
+ def rod(a,b,r):
+  a=V(*a);delta=V(*b)-a;return Part.makeCylinder(r,delta.Length,a,delta.normalize())
+ def ring(ro,ri,l,pos,axis):return Part.makeCylinder(ro,l,V(*pos),V(*axis)).cut(Part.makeCylinder(ri,l,V(*pos),V(*axis)))
+ def add(name,label,shape,group,color=silver,status='CUSTOM_PRELIMINARY',part='',source=''):
+  if shape.isNull() or not shape.isValid():raise ValueError(name+' invalid shape')
+  o=d.addObject('Part::Feature',name);o.Label=label;o.Shape=shape;groups[group].addObject(o)
+  for prop,val in [('DesignStatus',status),('CandidatePartNumber',part),('SourceURL',source)]:
+   o.addProperty('App::PropertyString',prop,'Traceability');setattr(o,prop,val)
+  o.ViewObject.ShapeColor=color;objects.append(o);return o
+ # All geometry is in millimetres. Front is +X. Straight wheel centres +/-180, +/-190, Z80.
+ for s in (-1,1):
+  shape=box(-240,s*50-10,70,480,20,25).cut(box(-241,s*50-8,72,482,16,21))
+  add('Rail'+str(s).replace('-','N'),'가공 프레임 레일 480×20×25 t2',shape,'Frame',blue)
+ for i,x in enumerate((-220,-105,105,220)):
+  add('Cross'+str(i),'가공 크로스멤버 20×120×20',box(x-10,-60,75,20,120,20),'Frame',blue)
+ for j,x in enumerate((-235,-180,125,180)):
+  add('ModuleCross'+str(j),'현가 모듈 가공 크로스멤버',box(x-10,-92,75,20,184,20),'Frame',blue)
+ for x in (-180,180):
+  for side in (-1,1):
+   add('Upright'+str(x).replace('-','N')+str(side).replace('-','N'),'상부 암 피벗 지지대',box(x-9,side*80-9,95,18,18,45),'Frame',blue)
+ add('Floor','중앙 배터리 받침판 210×120 t3',box(-105,-60,95,210,120,3),'Frame')
+ motor=Part.read(str(OUT/'sources/5303-2402-0051.step'))
+ for x,tag in [(180,'F'),(-180,'R')]:
+  for s in (-1,1):
+   code=tag+('L' if s>0 else 'R');mx=x+s*25
+   # STEP source output axis +Z. Front shaft shoulder at source Z48.5; source shaft tip Z71.99.
+   rot=A.Rotation(V(0,0,1),V(0,s,0));shape=motor.copy();shape.Placement=A.Placement(V(mx,s*(70-48.5),115),rot)
+   add(code+'Motor',code+' ServoCity 5303-2402-0051 [조건부 후보]',shape,'Motors',silver,'SUPPLIER_STEP; duty-cycle limited; selection conditional','5303-2402-0051','https://www.servocity.com/content/step_files/5303-2402-0051.zip')
+   # Front mounting plate has source-based M4 pattern; final bracket support and connector clearance pending.
+   plate=box(mx-24,s*67-3,91,48,6,48)
+   plate=plate.cut(rod((mx,s*61,115),(mx,s*74,115),10))
+   for dx,dz in [(-12,0),(12,0),(0,-12),(0,12)]:plate=plate.cut(rod((mx+dx,s*61,115+dz),(mx+dx,s*74,115+dz),2.2))
+   add(code+'MotorBracket',code+' 모터 연결판 · 홀 패턴 재확인',plate,'Frame',blue)
+   for z0,z1,lev,pn in [(85,65,'Lower','8930'),(140,115,'Upper','8929')]:
+    # Abstract links visualize purchased A-arms only; NOT manufacturer arm geometry.
+    shape=Part.makeCompound([rod((x-24,s*80,z0),(x,s*170,z1),5),rod((x+24,s*80,z0),(x,s*170,z1),5),rod((x-24,s*80,z0),(x+24,s*80,z0),5)])
+    add(code+lev+'Arm',code+' '+pn+' 현가암 후보 [공간모델]',shape,'Suspension',orange,'PURCHASE_CANDIDATE_ENVELOPE; no OEM dimensions',pn)
+    add(code+lev+'Pivot',code+' 피벗 지지 블록 · 위치 미확정',box(x-30,s*80-9,z0-10,60,18,20),'Frame',blue)
+   # Purchased wheel carrier placeholder. No invented bearing seats or load ratings.
+   add(code+'Carrier',code+' '+('8932+8937' if tag=='F' else '8952')+' 허브 지지 [공간모델]',box(x-14,s*165-8,56,28,16,68),'Suspension',orange,'PURCHASE_CANDIDATE_ENVELOPE',('8932;8937' if tag=='F' else '8952'))
+   a=(x-18,s*143,77);b=(x-55,s*85,192)
+   add(code+'Shock',code+' GT-Maxx 8961 쇼크 후보 [공간모델]',Part.makeCompound([rod(a,b,7),rod((x-18,s*143,77),(x-42,s*106,151),10)]),'Suspension',orange,'ENVELOPE; eye length travel spring load unknown','8961')
+   add(code+'ShockTower',code+' 가공 쇼크 타워 [잠정]',box(x-62,s*80-6,95,14,12,104),'Frame',blue)
+   # Four independent drivetrains; no differential or centre drive shaft.
+   add(code+'Adapter',code+' 8REX→8951 연결부 공간 · 제작 상세 미완',ring(10,4,18,(mx,s*94,115),(0,s,0)),'Drive',purple,'INTERFACE_UNRESOLVED; no released machining dimensions','custom adapter;8951')
+   add(code+'CV',code+' Traxxas 8950X CV 후보 [공간모델]',Part.makeCompound([rod((mx,s*112,115),(x,s*170,80),4),Part.makeSphere(8,V(mx,s*112,115)),Part.makeSphere(8,V(x,s*170,80))]),'Drive',orange,'ENVELOPE; length plunge angle and torque unresolved','8950X')
+   add(code+'Axle',code+' 휠 축·17mm 허브 [공간모델]',rod((x,s*170,80),(x,s*200,80),8.5),'Drive',orange,'ENVELOPE; mate only after 8950X/8654/7758 dimensions verified','8654;7758')
+   add(code+'Tire',code+' Ø160×60 타이어 [모델 미선정]',ring(80,49,60,(x,s*160,80),(0,s,0)),'Wheels',black,'UNSELECTED_ENVELOPE')
+   add(code+'Rim',code+' 휠 [모델 미선정]',ring(49,9,30,(x,s*175,80),(0,s,0)),'Wheels',silver,'UNSELECTED_ENVELOPE')
+ # Steering links show the required connection topology, not validated Ackermann geometry.
+ add('Servo','Traxxas 2280 조향서보 후보 [공간모델]',box(50,-115,115,45,40,45),'Steering',orange,'PURCHASE_CANDIDATE_ENVELOPE; torque and horn fit pending','2280','https://traxxas.com/articles/servo-upgrade-guide')
+ add('ServoSupport','가공 조향서보 받침',box(45,-120,110,55,80,5),'Frame',blue)
+ add('ServoWeb','가공 서보 받침 지지',box(45,-60,95,55,10,15),'Frame',blue)
+ add('BellSupport','가공 벨크랭크 받침',box(118,-50,115,24,100,5),'Frame',blue)
+ for side in (-1,1):add('BellPost'+str(side).replace('-','N'),'벨크랭크 지지',rod((130,side*40,95),(130,side*40,115),5),'Frame',blue)
+ add('Bellcrank','8946 벨크랭크 후보 [공간모델]',Part.makeCompound([rod((130,-40,135),(130,40,135),4),rod((130,-40,120),(130,-40,140),7),rod((130,40,120),(130,40,140),7)]),'Steering',orange,'ENVELOPE; pivot spacing unknown','8946')
+ add('ServoLink','서보→벨크랭크 링크 [길이 미확정]',rod((72,-95,160),(130,-40,135),3),'Steering',orange,'ENVELOPE')
+ for s in (-1,1):
+  add('Tie'+str(s).replace('-','N'),'전륜 타이로드 [길이 미확정]',rod((130,s*40,135),(155,s*168,100),3),'Steering',orange,'ENVELOPE; toe and bump-steer not solved')
+  add('SteerArm'+str(s).replace('-','N'),'너클 조향암 [공간모델]',rod((155,s*168,100),(180,s*165,100),5),'Steering',orange,'ENVELOPE')
+ for x in (-105,105):
+  for y in (-50,50):add('Post'+str(x).replace('-','N')+str(y).replace('-','N'),'데크 지지대',rod((x,y,98),(x,y,218),7),'Deck')
+ deck=box(-160,-130,218,320,260,3)
+ for x in (-140,-105,0,105,140):
+  for y in (-110,-50,50,110):deck=deck.cut(rod((x,y,217),(x,y,222),2.75))
+ add('DeckPlate','가공 데크 320×260 t3 [구멍 잠정]',deck,'Deck')
+ add('Battery','24V급 배터리 [미선정 190×100×70 예약]',box(-95,-50,99,190,100,70),'Equipment',purple,'UNSELECTED_ENVELOPE')
+ add('Lidar','LiDAR [모델 미선정]',Part.makeCylinder(35,55,V(-85,55,226)),'Equipment',purple,'UNSELECTED_ENVELOPE')
+ add('Computer','제어보드 [모델 미선정]',box(-50,-95,226,100,70,30),'Equipment',purple,'UNSELECTED_ENVELOPE')
+ add('Camera','전방 카메라 [모델 미선정]',box(115,-25,226,40,50,35),'Equipment',purple,'UNSELECTED_ENVELOPE')
+ notes=d.addObject('App::FeaturePython','DesignBasis');notes.Label='00 설계기준 · 가공/구매 발주 불가 R0'
+ for key,value in [('PayloadKg','10 kg, excludes robot and battery'),('SpeedTarget','0.1–2 m/s'),('OverallStraight','520 L x 440 W mm, provisional'),('Wheelbase','360 mm provisional'),('Frame','Custom-machined; purchased chassis excluded'),('Steering','Front-wheel mechanical steering; 4 independent drive motors'),('Unresolved','RC mounting dimensions; CV adapter; spring load; motor continuous thermal duty; wheel SKU; steering kinematics'),('ReferenceConflict','Reference wheelbase450 + tire180 =630, inconsistent with length600')]:notes.addProperty('App::PropertyString',key);setattr(notes,key,value)
+ d.recompute();G.activateView('Gui::View3DInventor',True);v=G.activeDocument().mdiViewsOfType('Gui::View3DInventor')[0];v.setCameraOrientation(A.Rotation(V(0,0,1),45).multiply(A.Rotation(V(1,0,0),55)).Q);v.fitAll();G.updateGui()
+ d.saveAs(str(OUT/'TypeB_DIY_10kg_R0.FCStd'))
+ Part.export(objects,str(OUT/'TypeB_DIY_10kg_R0.step'))
+ loop=QtCore.QEventLoop();QtCore.QTimer.singleShot(1200,loop.quit);loop.exec();v.setCameraOrientation(A.Rotation(V(0,0,1),45).multiply(A.Rotation(V(1,0,0),55)).Q);v.fitAll();G.updateGui();v.saveImage(str(OUT/'Assembly.png'),1800,1300,'White')
+ groups['Deck'].Visibility=False;groups['Equipment'].Visibility=False;v.fitAll();G.updateGui();v.saveImage(str(OUT/'Chassis.png'),1800,1300,'White')
+ groups['Deck'].Visibility=True;groups['Equipment'].Visibility=True;v.fitAll();d.save()
+ result={'objects':len(objects),'invalid':[o.Name for o in objects if not o.Shape.isValid()],'motor_count':4,'payload_kg':10,'status':'PACKAGING_ONLY_NOT_MANUFACTURING_RELEASE','supplier_motor_step':True,'RC_suspension_geometry':'unverified envelopes','a_untouched':True}
+ json.dump(result,open(OUT/'validation.json','w'),indent=2);(OUT/'complete.txt').write_text('done')
+except Exception:
+ (OUT/'error.txt').write_text(traceback.format_exc());raise

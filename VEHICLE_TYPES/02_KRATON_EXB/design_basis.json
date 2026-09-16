@@ -1,0 +1,14 @@
+{
+  "type": "B",
+  "completion_level": "ROLLER ONLY",
+  "preferred_candidate": "ARRMA KRATON6S EXB Roller",
+  "part_number": "ARA106053",
+  "selection_status": "conditional on obtainable complete roller; manufacturer marks discontinued",
+  "excluded_previous_RTR": "ARA8708V6T1",
+  "fixed_total_mass_kg": null,
+  "motor": "user will configure separately",
+  "ESC": "user will configure separately",
+  "servo": "separate purchase",
+  "battery": "TBD",
+  "CAD_status": "no model for selected roller yet"
+}

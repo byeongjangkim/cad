@@ -1,0 +1,6 @@
+Part,Description,Quantity,Size mm,Status
+P01,Lower chassis plate,1,400 x 190 x 4,Assumed
+P02,Battery deck,1,340 x 240 x 3,Assumed
+P03,Sensor deck,1,400 x 300 x 3,L/W from image; thickness assumed
+P04,Lower tubular spacer,6,OD12 ID4.5 L56,Assumed
+P05,Upper tubular spacer,6,OD12 ID4.5 L87,Assumed

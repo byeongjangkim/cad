@@ -1,0 +1,36 @@
+{
+  "wheel_rpm": [
+    11.300942704749964,
+    226.01885409499926
+  ],
+  "assumptions": {
+    "rolling_coefficient": 0.04,
+    "acceleration_m_s2": 0.5,
+    "equal_4wheel_load": true,
+    "application_factor": 2,
+    "post_gear_efficiency": 0.9
+  },
+  "screen": [
+    {
+      "gross_mass_assumption_kg": 18,
+      "tractive_force_N": 16.063200000000002,
+      "wheel_torque_each_Nm": 0.33933510000000006,
+      "gear_output_screen_Nm_factor2_eff0_9": 0.7540780000000001
+    },
+    {
+      "gross_mass_assumption_kg": 22,
+      "tractive_force_N": 19.632800000000003,
+      "wheel_torque_each_Nm": 0.4147429000000001,
+      "gear_output_screen_Nm_factor2_eff0_9": 0.921650888888889
+    },
+    {
+      "gross_mass_assumption_kg": 26,
+      "tractive_force_N": 23.2024,
+      "wheel_torque_each_Nm": 0.49015070000000005,
+      "gear_output_screen_Nm_factor2_eff0_9": 1.0892237777777778
+    }
+  ],
+  "R3_front_joint_angle_deg_assumed": 35.25208217732051,
+  "R3_rear_joint_angle_deg_assumed": 36.13088954263381,
+  "decision": "BLH450 parallel-shaft envelope rejected for current R2 layout; no production motor selected"
+}

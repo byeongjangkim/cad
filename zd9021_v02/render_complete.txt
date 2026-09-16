@@ -1,0 +1,1 @@
+Rendered chassis/top/side/exploded/platform and saved FreeCAD view state.

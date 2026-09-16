@@ -1,0 +1,78 @@
+import FreeCAD as A, FreeCADGui as G, Part, os, json, traceback
+from FreeCAD import Vector as V
+from PySide import QtCore
+OUT='/Users/byeongjangkim/MyProjects/Robots/cad/zd9021_v04'
+try:
+ d=A.openDocument('/Users/byeongjangkim/MyProjects/Robots/cad/zd9021_v03/ZD9021V3_assembly.FCStd')
+ d.Label='ZD 9021-V3 v04 - 센서 및 배터리 배치'
+ equipment=d.addObject('App::Part','Equipment');equipment.Label='05 상부 장비 (규격 가정)'
+ battery=d.addObject('App::Part','BatteryEquipment');battery.Label='06 배터리 및 거치대 (규격 가정)'
+ added=[]
+ def box(x,y,z,l,w,h):return Part.makeBox(l,w,h,V(x,y,z))
+ def add(name,label,shape,color,group=equipment):
+  o=d.addObject('Part::Feature',name);o.Label=label;o.Shape=shape;group.addObject(o)
+  o.addProperty('App::PropertyString','Evidence','Provenance');o.Evidence='CUSTOM PLACEHOLDER: assumed envelope; no manufacturer model selected; mounting and electrical compatibility unverified'
+  o.addProperty('App::PropertyColor','DisplayColor','Provenance');o.DisplayColor=color
+  o.ViewObject.ShapeColor=color;o.ViewObject.LineColor=(0.12,0.12,0.12)
+  assert shape.isValid() and shape.Volume>0,name
+  added.append(o);return o
+ gray=(0.30,0.33,0.36);black=(0.08,0.09,0.11);silver=(0.7,0.72,0.75)
+ add('LidarBase','LiDAR 고정판 (100 × 100 × 4)',box(-150,-50,248,100,100,4),silver)
+ add('LidarFoot','LiDAR 하부 하우징',Part.makeCylinder(43,15,V(-100,0,252)),black)
+ add('LidarWindow','LiDAR 스캔부 (외경 90 / 전체 높이 75)',Part.makeCylinder(45,53,V(-100,0,267)),(0.05,0.22,0.32))
+ add('LidarCap','LiDAR 상부 커버',Part.makeCylinder(45,7,V(-100,0,320)),gray)
+ add('ControllerTray','제어보드 받침판',box(-10,-50,248,120,100,3),silver)
+ for i,(x,y) in enumerate([(0,-40),(100,-40),(0,40),(100,40)]):
+  add('BoardPost'+str(i),'제어보드 스페이서',Part.makeCylinder(3,8,V(x,y,251)),silver)
+ add('ControllerPCB','제어보드 공간 모델 (100 × 80)',box(0,-40,259,100,80,2),(0.05,0.38,0.18))
+ add('ControllerHeatsink','제어보드 방열부 공간',box(20,-25,261,60,50,12),gray)
+ for i in range(8):add('Fin'+str(i),'방열핀',box(20+i*8,-25,273,2,50,8),black)
+ add('ControllerPorts','제어보드 커넥터 공간',box(85,-35,261,15,70,12),silver)
+ add('CameraFoot','전방 카메라 받침',box(140,-32,248,45,64,4),silver)
+ add('CameraBracket','전방 카메라 수직 브래킷',box(140,-25,252,4,50,32),gray)
+ add('CameraBody','전방 카메라 (45 × 50 × 40)',box(144,-25,260,45,50,40),black)
+ add('CameraLens','카메라 렌즈 (+X 전방)',Part.makeCylinder(16,10,V(189,0,280),V(1,0,0)),(0.04,0.18,0.25))
+ tray=box(-105,-50,156,190,100,4)
+ add('BatteryShelf','배터리 중간 선반 (190 × 100)',tray,silver,battery)
+ # End brackets connect the shelf to the underside of the existing upper deck.
+ for i,x in enumerate((-109,85)):
+  s=box(x,-45,156,4,90,89).fuse(box(x if i==0 else x-16,-45,241,20,90,4)).removeSplitter()
+  add('BatteryHanger'+str(i),'배터리 선반 지지 브래킷',s,gray,battery)
+ add('BatteryPack','배터리 공간 모델 (160 × 50 × 50)',box(-90,-25,160,160,50,50),black,battery)
+ for i,x in enumerate((-60,35)):
+  strap=box(x,-28,160,15,56,53).cut(box(x-1,-25,159,17,50,51))
+  add('BatteryStrap'+str(i),'배터리 고정 밴드',strap,(0.18,0.18,0.18),battery)
+ d.recompute()
+ # Check new equipment against the existing assembled chassis and deck, excluding hidden templates.
+ existing=[o for o in d.Objects if o.TypeId=='App::Link' and not o.Name.endswith('_EX')]
+ overlaps=[]
+ for o in added:
+  for p in existing:
+   if o.Shape.BoundBox.intersect(p.Shape.BoundBox):
+    vol=o.Shape.common(p.Shape).Volume
+    if vol>0.1:overlaps.append([o.Name,p.Name,vol])
+ assert not overlaps,str(overlaps)
+ d.ComponentLibrary.Visibility=False;d.Exploded.Visibility=False
+ d.RollingChassis.Visibility=True;d.RobotDeck.Visibility=True
+ G.activeDocument().activeView().viewAxonometric();G.activeDocument().activeView().fitAll()
+ def snap(name):
+  G.updateGui();loop=QtCore.QEventLoop();QtCore.QTimer.singleShot(900,loop.quit);loop.exec_()
+  G.activeDocument().activeView().saveImage(OUT+'/'+name+'.png',1800,1400,'White')
+ snap('platform')
+ G.activeDocument().activeView().viewTop();G.activeDocument().activeView().fitAll();snap('top')
+ G.activeDocument().activeView().viewRear();G.activeDocument().activeView().fitAll();snap('side')
+ G.activeDocument().activeView().viewAxonometric();G.activeDocument().activeView().fitAll()
+ d.recompute();d.saveAs(OUT+'/ZD9021V3_equipped.FCStd')
+ e=A.newDocument('ResolvedExport');objs=[]
+ for p in existing+added:
+  o=e.addObject('Part::Feature',p.Name);o.Shape=p.Shape.copy();objs.append(o)
+ Part.export(objs,OUT+'/ZD9021V3_equipped.step')
+ check=Part.Shape();check.read(OUT+'/ZD9021V3_equipped.step');assert check.isValid()
+ assert len(check.Solids)==sum(len(o.Shape.Solids) for o in objs)
+ json.dump({'added_components':len(added),'shape_and_step_check':'PASS','static_overlap_with_existing':'PASS','limitations':'Assumed equipment dimensions; no mounting hole, payload, suspension motion or electrical validation'},open(OUT+'/validation.json','w'),indent=2)
+ A.closeDocument(e.Name);A.closeDocument(d.Name)
+ open(OUT+'/complete.txt','w').write('PASS')
+ G.getMainWindow().close()
+except Exception:
+ open(OUT+'/error.txt','w').write(traceback.format_exc())
+ raise

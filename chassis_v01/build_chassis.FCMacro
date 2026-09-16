@@ -1,0 +1,115 @@
+import os, sys, math, json, csv
+import FreeCAD as App
+import Part
+
+OUT = '/Users/byeongjangkim/MyProjects/Robots/cad/chassis_v01'
+os.makedirs(OUT, exist_ok=True)
+doc = App.newDocument('InspectionChassisV01')
+params = doc.addObject('Spreadsheet::Sheet', 'Dimensions')
+params.Label = '00 Dimensions (mm) - provisional'
+rows = [('BaseLength',400),('BaseWidth',190),('BaseThickness',4),
+        ('MiddleLength',340),('MiddleWidth',240),('MiddleThickness',3),
+        ('TopLength',400),('TopWidth',300),('TopThickness',3),
+        ('GroundClearance',65),('MiddleHeight',125),('TopHeight',215),
+        ('LowerPostHeight',56),('UpperPostHeight',87),('PostRadius',6),('HoleRadius',2.25)]
+for i,(key,value) in enumerate(rows,1):
+    params.set('A'+str(i),key); params.set('B'+str(i),str(value)); params.setAlias('B'+str(i),key)
+params.set('A18','Top deck size from reference; other dimensions assumed')
+library=doc.addObject('App::DocumentObjectGroup','Components'); library.Label='01 Individual component definitions'
+assembly=doc.addObject('App::Part','Assembly'); assembly.Label='02 Chassis assembly - fixed placement'
+exploded=doc.addObject('App::Part','Exploded'); exploded.Label='03 Exploded view (toggle visibility)'
+parts=[]; links=[]; checks=[]
+silver=(0.76,0.79,0.83); dark=(0.20,0.23,0.28)
+
+def expr(obj, prop, value): obj.setExpression(prop,'Dimensions.'+value)
+
+def plate(name, length, width, thick, holes, color=silver):
+    body=doc.addObject('App::Part',name); library.addObject(body)
+    box=doc.addObject('Part::Box',name+'Blank'); body.addObject(box)
+    for prop,key in [('Length',length),('Width',width),('Height',thick)]: expr(box,prop,key)
+    box.setExpression('Placement.Base.x','-Dimensions.'+length+'/2')
+    box.setExpression('Placement.Base.y','-Dimensions.'+width+'/2')
+    tip=box
+    for n,(x,y) in enumerate(holes):
+        tool=doc.addObject('Part::Cylinder',name+'Hole'+str(n+1)); body.addObject(tool)
+        expr(tool,'Radius','HoleRadius'); tool.setExpression('Height','Dimensions.'+thick+'+2')
+        tool.Placement.Base=App.Vector(x,y,-1)
+        cut=doc.addObject('Part::Cut',name+'Drill'+str(n+1)); body.addObject(cut)
+        cut.Base=tip; cut.Tool=tool; tip.Visibility=False; tool.Visibility=False; tip=cut
+    doc.recompute()
+    tip.ViewObject.ShapeColor=color
+    tip.addProperty('App::PropertyString','DesignStatus'); tip.DesignStatus='Concept only; hole positions provisional'
+    body.Visibility=False
+    parts.append((name,tip))
+    return tip
+
+def post(name,height):
+    body=doc.addObject('App::Part',name); library.addObject(body)
+    outer=doc.addObject('Part::Cylinder',name+'Outer'); body.addObject(outer)
+    expr(outer,'Radius','PostRadius'); expr(outer,'Height',height)
+    bore=doc.addObject('Part::Cylinder',name+'Bore'); body.addObject(bore)
+    expr(bore,'Radius','HoleRadius'); expr(bore,'Height',height)
+    tip=doc.addObject('Part::Cut',name+'Finished'); body.addObject(tip); tip.Base=outer; tip.Tool=bore
+    outer.Visibility=False; bore.Visibility=False; tip.ViewObject.ShapeColor=dark
+    doc.recompute(); body.Visibility=False; parts.append((name,tip)); return tip
+
+mounts=[(x,y) for x in (-145,0,145) for y in (-75,75)]
+base=plate('P01_LowerChassis','BaseLength','BaseWidth','BaseThickness',mounts+[(x,y) for x in (-185,185) for y in (-60,60)])
+middle=plate('P02_BatteryDeck','MiddleLength','MiddleWidth','MiddleThickness',mounts)
+grid=[(x,y) for x in (-175,-125,-75,-25,25,75,125,175) for y in (-125,125)]
+top=plate('P03_SensorDeck','TopLength','TopWidth','TopThickness',mounts+grid)
+lower=post('P04_LowerSpacer','LowerPostHeight')
+upper=post('P05_UpperSpacer','UpperPostHeight')
+
+def instance(source,name,x,y,zkey,offset,explode):
+    link=doc.addObject('App::Link',name); link.setLink(source); assembly.addObject(link)
+    link.LinkPlacement.Base=App.Vector(x,y,0)
+    link.setExpression('LinkPlacement.Base.z','Dimensions.'+zkey+('+'+str(offset) if offset else ''))
+    link.Visibility=True; links.append(link)
+    ex=doc.addObject('App::Link',name+'_Exploded'); ex.setLink(source); exploded.addObject(ex)
+    ex.LinkPlacement.Base=App.Vector(x,y,0)
+    ex.setExpression('LinkPlacement.Base.z','Dimensions.'+zkey+'+'+str(offset+explode)); ex.Visibility=True
+
+instance(base,'LowerChassis',0,0,'GroundClearance',0,0)
+instance(middle,'BatteryDeck',0,0,'MiddleHeight',0,90)
+instance(top,'SensorDeck',0,0,'TopHeight',0,230)
+for i,(x,y) in enumerate(mounts,1):
+    instance(lower,'LowerSpacer_%02d'%i,x,y,'GroundClearance',4,40)
+    instance(upper,'UpperSpacer_%02d'%i,x,y,'MiddleHeight',3,150)
+exploded.Visibility=False; library.Visibility=False
+doc.recompute()
+for name,shapeobj in parts:
+    shape=shapeobj.Shape
+    assert shape.isValid() and len(shape.Solids)==1 and shape.Volume>0, name
+    checks.append({'part':name,'valid':shape.isValid(),'solids':len(shape.Solids),'volume_mm3':shape.Volume})
+    Part.export([shapeobj],os.path.join(OUT,name+'.step'))
+for i,a in enumerate(links):
+    for b in links[i+1:]:
+        volume=a.Shape.common(b.Shape).Volume
+        assert volume<0.001, 'Interference: '+a.Name+' / '+b.Name
+exportdoc=App.newDocument('StepExport')
+exports=[]
+for link in links:
+    obj=exportdoc.addObject('Part::Feature',link.Name)
+    obj.Shape=link.Shape.copy(); exports.append(obj)
+exportdoc.recompute()
+Part.export(exports,os.path.join(OUT,'chassis_assembly.step'))
+check=Part.Shape(); check.read(os.path.join(OUT,'chassis_assembly.step'))
+assert len(check.Solids)==15 and check.isValid(), 'STEP round trip failed'
+App.closeDocument(exportdoc.Name); App.setActiveDocument(doc.Name)
+with open(os.path.join(OUT,'validation.json'),'w') as f: json.dump({'components':checks,'instances':len(links),'interference_check':'PASS (no positive volume intersections)'},f,indent=2)
+with open(os.path.join(OUT,'BOM.csv'),'w',newline='') as f:
+    writer=csv.writer(f); writer.writerow(['Part','Description','Quantity','Size mm','Status'])
+    writer.writerows([['P01','Lower chassis plate',1,'400 x 190 x 4','Assumed'],['P02','Battery deck',1,'340 x 240 x 3','Assumed'],['P03','Sensor deck',1,'400 x 300 x 3','L/W from image; thickness assumed'],['P04','Lower tubular spacer',6,'OD12 ID4.5 L56','Assumed'],['P05','Upper tubular spacer',6,'OD12 ID4.5 L87','Assumed']])
+if App.GuiUp:
+    import FreeCADGui as Gui
+    Gui.activeDocument().activeView().viewAxonometric(); Gui.activeDocument().activeView().fitAll()
+    Gui.activeDocument().activeView().saveImage(os.path.join(OUT,'assembly.png'),1600,1200,'White')
+    assembly.Visibility=False; exploded.Visibility=True
+    Gui.activeDocument().activeView().fitAll()
+    Gui.activeDocument().activeView().saveImage(os.path.join(OUT,'exploded.png'),1600,1400,'White')
+    exploded.Visibility=False; assembly.Visibility=True
+    Gui.activeDocument().activeView().fitAll()
+doc.recompute()
+doc.saveAs(os.path.join(OUT,'chassis_assembly.FCStd'))
+with open(os.path.join(OUT,'complete.txt'),'w') as f: f.write('Build and validation completed.\n')

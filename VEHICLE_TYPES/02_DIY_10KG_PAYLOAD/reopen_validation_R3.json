@@ -1,0 +1,108 @@
+{
+  "motor_frame_collisions": [
+    [
+      "FRMotorGear",
+      "FLLowerLugN28_75",
+      1553.165
+    ],
+    [
+      "FRMotorGear",
+      "FLUpperLugN18_0",
+      6673.165
+    ],
+    [
+      "FRMotorGear",
+      "ServoPlate",
+      9500.0
+    ],
+    [
+      "FRMotorGear",
+      "TowerBrace1801",
+      194.0
+    ],
+    [
+      "FRMotorGear",
+      "DeckPost10560",
+      12315.043
+    ],
+    [
+      "FRMotorGear",
+      "DeckFoot10560",
+      2250.0
+    ],
+    [
+      "FRMotorGear",
+      "Gusset10560N1",
+      1750.0
+    ],
+    [
+      "FRMotorGear",
+      "Gusset105601",
+      3150.0
+    ],
+    [
+      "FLMotorGear",
+      "FRLowerLug28_75",
+      1553.165
+    ],
+    [
+      "FLMotorGear",
+      "FRUpperLug18_0",
+      6673.165
+    ],
+    [
+      "FLMotorGear",
+      "TowerBrace180N1",
+      1929.488
+    ],
+    [
+      "RRMotorGear",
+      "RLLowerLugN28_75",
+      1553.165
+    ],
+    [
+      "RRMotorGear",
+      "TowerBraceN1801",
+      194.0
+    ],
+    [
+      "RLMotorGear",
+      "RRLowerLug28_75",
+      1553.165
+    ],
+    [
+      "RLMotorGear",
+      "TowerBraceN180N1",
+      1929.488
+    ],
+    [
+      "RLMotorGear",
+      "DeckPostN105N60",
+      12315.043
+    ],
+    [
+      "RLMotorGear",
+      "DeckFootN105N60",
+      2250.0
+    ],
+    [
+      "RLMotorGear",
+      "GussetN105N60N1",
+      3150.0
+    ],
+    [
+      "RLMotorGear",
+      "GussetN105N601",
+      1750.0
+    ]
+  ],
+  "features": 138,
+  "invalid": [],
+  "straight_static_tire_frame_collisions": [],
+  "exclusions": [
+    "steered or suspended states",
+    "OEM shapes unavailable",
+    "motor and CV interface not solved"
+  ],
+  "a_sha256": "1a9750cea43d4a132279245218db4242a16532f9393e4db887fcefbd1fc08ec2"
+}

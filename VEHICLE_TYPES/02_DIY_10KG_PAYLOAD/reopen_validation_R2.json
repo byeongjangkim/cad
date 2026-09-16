@@ -1,0 +1,11 @@
+{
+  "features": 126,
+  "invalid": [],
+  "straight_static_tire_frame_collisions": [],
+  "exclusions": [
+    "steered or suspended states",
+    "OEM shapes unavailable",
+    "motor and CV interface not solved"
+  ],
+  "a_sha256": "1a9750cea43d4a132279245218db4242a16532f9393e4db887fcefbd1fc08ec2"
+}

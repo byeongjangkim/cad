@@ -1,0 +1,71 @@
+import FreeCAD as A, FreeCADGui as G, Part, math, json, pathlib, traceback
+from FreeCAD import Vector as V
+from PySide6 import QtCore
+OUT=pathlib.Path('/Users/byeongjangkim/MyProjects/Robots/cad/VEHICLE_TYPES/03_INDEPENDENT_4WD')
+try:
+ d=A.newDocument('TypeC_Independent4WD_R0');d.Label='C형 · 4모터 스윙암 · 차동속도 조향 · 개념 R0'
+ groups={}
+ for key,label in [('Frame','01 자체가공 프레임'),('Modules','02 독립 구동 모듈 · 제품 미선정'),('Suspension','03 스윙암 및 쇼크 · 개념'),('Deck','04 적재 데크 및 지지'),('Equipment','05 배터리·제어부 · 공간 예약')]:
+  o=d.addObject('App::Part',key);o.Label=label;groups[key]=o
+ objects=[]
+ silver=(.68,.72,.76);blue=(.16,.4,.62);orange=(.93,.49,.13);black=(.13,.14,.16);purple=(.62,.36,.68)
+ def box(x,y,z,l,w,h):return Part.makeBox(l,w,h,V(x,y,z))
+ def rod(a,b,r):
+  a=V(*a);delta=V(*b)-a;return Part.makeCylinder(r,delta.Length,a,delta.normalize())
+ def ring(ro,ri,l,pos,axis):return Part.makeCylinder(ro,l,V(*pos),V(*axis)).cut(Part.makeCylinder(ri,l,V(*pos),V(*axis)))
+ def add(name,label,shape,group,color=silver,status='CUSTOM_PRELIMINARY',part='',source=''):
+  if shape.isNull() or not shape.isValid():raise ValueError(name+' invalid shape')
+  o=d.addObject('Part::Feature',name);o.Label=label;o.Shape=shape;groups[group].addObject(o)
+  for prop,val in [('DesignStatus',status),('CandidatePartNumber',part),('SourceURL',source)]:
+   o.addProperty('App::PropertyString',prop,'Traceability');setattr(o,prop,val)
+  o.ViewObject.ShapeColor=color;objects.append(o);return o
+ # All sizes are design assumptions, not purchased part measurements. Front +X.
+ for side in (-1,1):
+  add('Rail'+str(side).replace('-','N'),'프레임 레일 440×20×25 t2 · 잠정',box(-220,side*105-10,110,440,20,25).cut(box(-221,side*105-8,112,442,16,21)),'Frame',blue)
+ for x in (-195,-100,100,195):add('Cross'+str(x).replace('-','N'),'프레임 크로스멤버',box(x-10,-95,110,20,190,20),'Frame',blue)
+ add('BatteryFloor','배터리 하부 받침 220×180 t3',box(-110,-90,135,220,180,3),'Frame')
+ for x,tag in [(180,'F'),(-180,'R')]:
+  for side in (-1,1):
+   code=tag+('L' if side>0 else 'R');pivot=100 if x>0 else -100
+   # A compact gearmotor travels with the arm, eliminating the chassis-to-wheel CV shaft.
+   motor=Part.makeCylinder(25,50,V(x,side*105,90),V(0,side,0))
+   o=add(code+'MotorGear',code+' 감속모터+엔코더 Ø50×50 예약 · 미선정',motor,'Modules',purple,'UNSELECTED_ENVELOPE')
+   add(code+'Coupling',code+' 모터→허브 결합 · 규격 미확정',rod((x,side*150,90),(x,side*170,90),6),'Modules',purple,'INTERFACE_UNRESOLVED')
+   add(code+'BearingHousing',code+' 독립 하중지지 허브 · 베어링 포함 모듈 우선',ring(22,12,24,(x,side*156,90),(0,side,0)),'Modules',orange,'UNSELECTED_ENVELOPE; NO LOAD RATING')
+   add(code+'WheelAxle',code+' 허브 축 · 실제 규격 미확정',rod((x,side*155,90),(x,side*200,90),6),'Modules',orange,'UNSELECTED_ENVELOPE')
+   add(code+'Wheel',code+' Ø180×60 타이어 · 미선정',ring(90,50,60,(x,side*160,90),(0,side,0)),'Modules',black,'UNSELECTED_ENVELOPE')
+   add(code+'Rim',code+' 휠 · 미선정',ring(50,6,20,(x,side*180,90),(0,side,0)),'Modules',silver,'UNSELECTED_ENVELOPE')
+   for yy in (130,150):
+    add(code+'Arm'+str(yy),code+' 스윙암 측판 · 개념',rod((pivot,side*yy,120),(x,side*yy,90),6),'Suspension',blue)
+   add(code+'ArmPivot',code+' 스윙암 피벗 · 베어링/축 미선정',rod((pivot,side*112,120),(pivot,side*155,120),5),'Suspension',orange,'UNSELECTED_ENVELOPE')
+   add(code+'PivotBracket',code+' 샤시 피벗 브래킷 · 홀 미확정',box(pivot-12,min(side*110,side*130),108,24,20,24),'Frame',blue)
+   add(code+'MotorCradle',code+' 모터와 허브를 함께 지지하는 암 브리지',box(x-27,min(side*128,side*156),61,54,28,5),'Suspension',blue)
+   add(code+'MotorSaddle',code+' 모터 새들 · 체결 미확정',ring(29,25,16,(x,side*130,90),(0,side,0)),'Suspension',blue)
+   attach=(x+pivot)/2
+   a=(attach,side*140,105);b=(pivot,side*125,195)
+   add(code+'Shock',code+' 코일오버 쇼크 · 제품/하중/스트로크 미확정',Part.makeCompound([rod(a,b,3),rod(a,(pivot+0.2*(attach-pivot),side*128,177),9)]),'Suspension',orange,'UNSELECTED_ENVELOPE')
+   add(code+'Tower',code+' 쇼크 상부 지지대 · 잠정',box(pivot-9,side*125-7,132,18,14,70),'Frame',blue)
+   add(code+'TowerFoot',code+' 쇼크 타워 프레임 연결',box(pivot-15,min(side*95,side*132),130,30,37,6),'Frame',blue)
+   # Motion parameters describe topology only; no solved assembly joints.
+   o.addProperty('App::PropertyString','MotionDescription');o.MotionDescription='Moves with swing arm; pivot axis Y; not a solved mechanism'
+ for x in (-95,95):
+  for y in (-85,85):add('DeckPost'+str(x).replace('-','N')+str(y).replace('-','N'),'데크 지지 기둥 · 잠정',rod((x,y,138),(x,y,230),7),'Deck')
+ add('Deck','적재 데크 320×280 t3 · 적재10kg 목표/미검증',box(-160,-140,230,320,280,3),'Deck')
+ add('Battery','배터리 200×140×75 예약 · 미선정',box(-100,-70,139,200,140,75),'Equipment',purple,'UNSELECTED_ENVELOPE')
+ add('Controller','4채널 모터제어부 공간 · 제품 미선정',box(-75,-60,237,150,120,30),'Equipment',purple,'UNSELECTED_ENVELOPE')
+ notes=d.addObject('Spreadsheet::Sheet','DesignBasis');notes.Label='00 C형 설계기준 · 개념 검토용'
+ rows=[['Item','C R0 assumption / requirement'],['Drive','4 independent geared motors moving with swing arms'],['Steering','Left/right differential speed; no steering servo in baseline'],['Suspension','4 independent swing arms; unverified stroke/spring/load'],['Payload','10 kg target; gross mass TBD; no capacity certification'],['Speed','0.1-2 m/s target; D180 implies 10.61-212.21 wheel rpm'],['Geometry','540 L x 440 W; wheelbase360; track380; assumed'],['Clearance','Frame110 mm; motor saddle minimum61 mm in static model'],['Deck','320 x 280 x 3; Z230 mm; provisional'],['Procurement','No selected drive module or shock; envelopes only'],['Alternative','Mechanical front steering retained as comparison only, not modelled'],['Preserved','Type A ZD9021V3 and Type B R2/R3 files untouched']]
+ for ri,row in enumerate(rows,1):
+  for ci,val in enumerate(row):notes.set(chr(65+ci)+str(ri),val)
+ notes.setColumnWidth('A',150);notes.setColumnWidth('B',720)
+ d.recompute();G.activateView('Gui::View3DInventor',True)
+ v=G.activeDocument().mdiViewsOfType('Gui::View3DInventor')[0]
+ v.setCameraOrientation(A.Rotation(V(0,0,1),45).multiply(A.Rotation(V(1,0,0),55)).Q);v.fitAll();G.updateGui()
+ d.saveAs(str(OUT/'TypeC_Independent4WD_R0.FCStd'));Part.export(objects,str(OUT/'TypeC_Independent4WD_R0.step'))
+ loop=QtCore.QEventLoop();QtCore.QTimer.singleShot(1200,loop.quit);loop.exec()
+ v.setCameraOrientation(A.Rotation(V(0,0,1),45).multiply(A.Rotation(V(1,0,0),55)).Q);v.fitAll();G.updateGui();v.saveImage(str(OUT/'Assembly.png'),1800,1300,'White')
+ groups['Deck'].Visibility=False;groups['Equipment'].Visibility=False;G.updateGui();v.saveImage(str(OUT/'Chassis.png'),1800,1300,'White')
+ groups['Deck'].Visibility=True;groups['Equipment'].Visibility=True;d.save()
+ (OUT/'validation.json').write_text(json.dumps({'features':len(objects),'invalid':[o.Name for o in objects if not o.Shape.isValid()],'status':'CONCEPT_ONLY_NO_PURCHASED_PARTS_SELECTED'},indent=2));(OUT/'complete.txt').write_text('done')
+except Exception:
+ (OUT/'error.txt').write_text(traceback.format_exc());raise

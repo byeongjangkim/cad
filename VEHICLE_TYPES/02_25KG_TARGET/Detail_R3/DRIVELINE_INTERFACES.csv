@@ -1,0 +1,7 @@
+﻿Interface,Input,Output,Missing_or_change,Decision
+AXE4274 -> PLE040 i4,"motor shaft D5, protrusion20.5",gearbox motor adaptation configured to order,input bore/clamp depth/centering/bolt pattern unknown,NOT DIRECT-FIT CONFIRMED
+PLE040 -> ZD8195 13T,PLE output D10h7 length26,ZD8195 bore/keyway not verified,new D10-compatible pinion or supported intermediate shaft needed,NOT DIRECT-FIT CONFIRMED
+Traxxas8980 -> Maxx driveline,complete center differential,matched Maxx transmission required,gearbox supports/input/output adaptation dimensions missing,MATCHED PLATFORM CANDIDATE
+Traxxas8951 -> 8996X,8951 drive cup and4x15.8 screw pin,8996X steel CV set,"catalog family compatibility, 25kg torque not published",PLATFORM COMPATIBILITY ONLY
+Traxxas8996X -> wheel,requires8654-series17mm splined hubs and7758-series nuts,current custom D12 six-bolt hub,hub architecture redesign required,CURRENT HUB INCOMPATIBLE
+MISUMI UNCA10 -> halfshaft,universal joint candidate,requires pin fixing and sliding shaft,not a standalone plunging CV; speed-angle derating needed,NOT CV SUBSTITUTE

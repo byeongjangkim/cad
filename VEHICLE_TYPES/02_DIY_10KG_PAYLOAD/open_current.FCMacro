@@ -1,0 +1,4 @@
+import FreeCAD as A, FreeCADGui as G
+d=A.openDocument('/Users/byeongjangkim/MyProjects/Robots/cad/VEHICLE_TYPES/02_DIY_10KG_PAYLOAD/TypeB_DIY_10kg_R2.FCStd')
+G.activeDocument().activeView().viewAxonometric()
+G.activeDocument().activeView().fitAll()

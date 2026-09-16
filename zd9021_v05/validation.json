@@ -1,0 +1,6 @@
+{
+  "shape_step_roundtrip": "PASS",
+  "new_vs_existing_overlap_mm3": [],
+  "performance": "UNVERIFIED:30kg load and0.1m/s operation",
+  "gear_ratio": "38/11 axle assumed; overall12.223776"
+}

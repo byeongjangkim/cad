@@ -1,0 +1,57 @@
+{
+  "mass_kg": 30.0,
+  "ratio_assumed": 12.223776223776223,
+  "axle_input_teeth_assumed": 11,
+  "drivetrain_efficiency_assumed": 0.8,
+  "rolling_resistance_assumed": 0.05,
+  "speeds": [
+    {
+      "speed_m_s": 0.1,
+      "wheel_rpm": 13.171443566225822,
+      "motor_rpm": 161.0047786976415
+    },
+    {
+      "speed_m_s": 0.5,
+      "wheel_rpm": 65.8572178311291,
+      "motor_rpm": 805.0238934882075
+    },
+    {
+      "speed_m_s": 1,
+      "wheel_rpm": 131.7144356622582,
+      "motor_rpm": 1610.047786976415
+    },
+    {
+      "speed_m_s": 1.5,
+      "wheel_rpm": 197.57165349338734,
+      "motor_rpm": 2415.0716804646227
+    },
+    {
+      "speed_m_s": 2,
+      "wheel_rpm": 263.4288713245164,
+      "motor_rpm": 3220.09557395283
+    }
+  ],
+  "load_scenarios": [
+    {
+      "slope_deg": 0,
+      "force_N": 14.715000000000002,
+      "total_wheel_torque_Nm": 1.0668375,
+      "motor_torque_Nm": 0.10909450979691077,
+      "motor_shaft_power_W_at_2m_s": 36.7875
+    },
+    {
+      "slope_deg": 10,
+      "force_N": 65.59610477295224,
+      "total_wheel_torque_Nm": 4.755717596039037,
+      "motor_torque_Nm": 0.4863183754530766,
+      "motor_shaft_power_W_at_2m_s": 163.9902619323806
+    },
+    {
+      "slope_deg": 20,
+      "force_N": 114.48410509560895,
+      "total_wheel_torque_Nm": 8.300097619431648,
+      "motor_torque_Nm": 0.8487657033600727,
+      "motor_shaft_power_W_at_2m_s": 286.21026273902237
+    }
+  ]
+}

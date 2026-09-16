@@ -1,0 +1,383 @@
+{
+  "status": "PASS shape and STEP roundtrip checks",
+  "unique_components": 49,
+  "rolling_instances": 82,
+  "custom_instances": 5,
+  "step_solids": 91,
+  "deck_post_clearance_check": {
+    "passed": [
+      "OptionalStandoff0",
+      "OptionalStandoff1",
+      "OptionalStandoff2",
+      "OptionalStandoff3"
+    ],
+    "scope": "static solid overlap against rolling chassis only; does not validate mounting or motion"
+  },
+  "assembly_envelope_mm": [
+    550.0,
+    430.0,
+    196.8869009069354
+  ],
+  "published_dimensions_applied": {
+    "ChassisLength": 446.0,
+    "ChassisWidth": 132.0,
+    "ChassisThickness": 3.0,
+    "Wheelbase": 370.0,
+    "TireDiameter": 145.0,
+    "TireWidth": 69.0,
+    "WheelHexAF": 17.0,
+    "FrontShockEyes": 110.0,
+    "RearShockEyes": 132.0
+  },
+  "limitations": [
+    "No OEM dimensional CAD available. Estimated shapes and all mounting coordinates remain unverified.",
+    "Fixed placement; no assembly joints or suspension kinematics.",
+    "No full interference certification: envelopes, springs and simplified interfaces may overlap.",
+    "Wheel envelope length515; custom protective extensions bring overall length to550."
+  ],
+  "parts": [
+    {
+      "name": "P8264",
+      "part_number": "8264",
+      "valid": true,
+      "solids": 1,
+      "evidence": "PUBLISHED overall 446 x 132 x 3 mm; ESTIMATED outline and all hole coordinates; end kick-up omitted"
+    },
+    {
+      "name": "P8170",
+      "part_number": "8170",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8169",
+      "part_number": "8169",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8160",
+      "part_number": "8160",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8162",
+      "part_number": "8162",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8261",
+      "part_number": "8261",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8262",
+      "part_number": "8262",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8025",
+      "part_number": "8025",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8046",
+      "part_number": "8046",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8045",
+      "part_number": "8045",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8051",
+      "part_number": "8051",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8052",
+      "part_number": "8052",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8037",
+      "part_number": "8037",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8068",
+      "part_number": "8068",
+      "valid": true,
+      "solids": 1,
+      "evidence": "PUBLISHED 17 mm across flats; assumed thickness 7 mm; axle hole 8 mm from bearing interface"
+    },
+    {
+      "name": "P8073",
+      "part_number": "8073",
+      "valid": true,
+      "solids": 1,
+      "evidence": "MANUAL p25: 16 x 8 x 5 mm"
+    },
+    {
+      "name": "P8317Body",
+      "part_number": "8317",
+      "valid": true,
+      "solids": 1,
+      "evidence": "PUBLISHED eye spacing 110.0 mm, max diameter 25 mm; internal proportions estimated; source S4"
+    },
+    {
+      "name": "P8317Shaft",
+      "part_number": "8317-shaft",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8317Eyes",
+      "part_number": "8317-eyes",
+      "valid": true,
+      "solids": 2,
+      "evidence": "PUBLISHED eye centre spacing 110.0 mm / hole diameter 3 mm; end shape simplified"
+    },
+    {
+      "name": "P8317Spring",
+      "part_number": "8319",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED wire diameter / pitch; visual representation, no spring-rate specification"
+    },
+    {
+      "name": "P8317Seat",
+      "part_number": "8317-seats",
+      "valid": true,
+      "solids": 2,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8318Body",
+      "part_number": "8318",
+      "valid": true,
+      "solids": 1,
+      "evidence": "PUBLISHED eye spacing 132.0 mm, max diameter 25 mm; internal proportions estimated; source S4"
+    },
+    {
+      "name": "P8318Shaft",
+      "part_number": "8318-shaft",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8318Eyes",
+      "part_number": "8318-eyes",
+      "valid": true,
+      "solids": 2,
+      "evidence": "PUBLISHED eye centre spacing 132.0 mm / hole diameter 3 mm; end shape simplified"
+    },
+    {
+      "name": "P8318Spring",
+      "part_number": "8320",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED wire diameter / pitch; visual representation, no spring-rate specification"
+    },
+    {
+      "name": "P8318Seat",
+      "part_number": "8318-seats",
+      "valid": true,
+      "solids": 2,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8175",
+      "part_number": "8175",
+      "valid": true,
+      "solids": 1,
+      "evidence": "PUBLISHED OD145 / width69 mm; ID87 from hub spec; tread simplified"
+    },
+    {
+      "name": "P8174",
+      "part_number": "8174",
+      "valid": true,
+      "solids": 1,
+      "evidence": "PUBLISHED 87 mm nominal hub/rim interface; rim offset and spoke pattern estimated"
+    },
+    {
+      "name": "Drive_FR",
+      "part_number": "8158",
+      "valid": true,
+      "solids": 1,
+      "evidence": "PUBLISHED diameter5; length/placement estimated"
+    },
+    {
+      "name": "Drive_FL",
+      "part_number": "8158",
+      "valid": true,
+      "solids": 1,
+      "evidence": "PUBLISHED diameter5; length/placement estimated"
+    },
+    {
+      "name": "Drive_RR",
+      "part_number": "8159",
+      "valid": true,
+      "solids": 1,
+      "evidence": "PUBLISHED diameter5; length/placement estimated"
+    },
+    {
+      "name": "Drive_RL",
+      "part_number": "8159",
+      "valid": true,
+      "solids": 1,
+      "evidence": "PUBLISHED diameter5; length/placement estimated"
+    },
+    {
+      "name": "P8156",
+      "part_number": "8156",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED envelope; 46T spur represented as blank disk; gear teeth/internals omitted"
+    },
+    {
+      "name": "P8428",
+      "part_number": "8428",
+      "valid": true,
+      "solids": 1,
+      "evidence": "MANUAL p26 part identification; support profile, height and hole placement estimated"
+    },
+    {
+      "name": "P8008",
+      "part_number": "8008",
+      "valid": true,
+      "solids": 1,
+      "evidence": "MANUAL p24 identifies 8008; outer geometry estimated; bevel and planetary teeth omitted"
+    },
+    {
+      "name": "CenterShaftN1",
+      "part_number": "8157",
+      "valid": true,
+      "solids": 1,
+      "evidence": "PUBLISHED diameter5; shaft length estimated"
+    },
+    {
+      "name": "BraceN1",
+      "part_number": "8266",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "CenterShaft1",
+      "part_number": "8157",
+      "valid": true,
+      "solids": 1,
+      "evidence": "PUBLISHED diameter5; shaft length estimated"
+    },
+    {
+      "name": "Brace1",
+      "part_number": "8267",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "P8426",
+      "part_number": "8426",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED 155 x 54 envelope from photo; exact battery fit unknown"
+    },
+    {
+      "name": "Servo35kg",
+      "part_number": "DS-R003B",
+      "valid": true,
+      "solids": 1,
+      "evidence": "MANUFACTURER 40 x 20 x 42 mm body; 35 kgf.cm stall torque, waterproof, steel gear; mounting ears/holes estimated"
+    },
+    {
+      "name": "ServoBracket",
+      "part_number": "CUSTOM-S01",
+      "valid": true,
+      "solids": 1,
+      "evidence": "CUSTOM mounting proposal; body clearance provided; OEM chassis attachment not resolved"
+    },
+    {
+      "name": "ServoHorn",
+      "part_number": "CUSTOM-S02",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED arm shape; spline and linkage geometry unverified"
+    },
+    {
+      "name": "P8028",
+      "part_number": "8028",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "SteerLink",
+      "part_number": "8161",
+      "valid": true,
+      "solids": 2,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "ServoDragLink",
+      "part_number": "8020",
+      "valid": true,
+      "solids": 1,
+      "evidence": "ESTIMATED: dimensions / holes / outline from reference images; not a replacement drawing"
+    },
+    {
+      "name": "BumperFront",
+      "part_number": "CUSTOM-B1",
+      "valid": true,
+      "solids": 1,
+      "evidence": "CUSTOM extensions to overall length550; not ZD original bumper; attachment design provisional"
+    },
+    {
+      "name": "BumperRear",
+      "part_number": "CUSTOM-BN1",
+      "valid": true,
+      "solids": 1,
+      "evidence": "CUSTOM extensions to overall length550; not ZD original bumper; attachment design provisional"
+    },
+    {
+      "name": "CustomDeck",
+      "part_number": "CUSTOM-D01",
+      "valid": true,
+      "solids": 1,
+      "evidence": "CUSTOM: reference image deck length/width; thickness, heights and holes provisional"
+    },
+    {
+      "name": "CustomPost",
+      "part_number": "CUSTOM-D02",
+      "valid": true,
+      "solids": 1,
+      "evidence": "CUSTOM: geometry only; attachment to OEM holes not resolved"
+    }
+  ]
+}
