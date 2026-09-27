@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "/Users/byeongjangkim/MyProjects/Robots/cad/ZD9021_FINAL_REVIEW/finalize.FCMacro", line 25, in <module>
-    view.viewAxonometric();view.fitAll();settle();view.saveImage(OUT+'/Platform.png',1800,1400,'White')
-    ^^^^^^^^^^^^^^^^^^^^
-AttributeError: viewAxonometric

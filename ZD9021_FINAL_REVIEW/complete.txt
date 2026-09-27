@@ -1,1 +1,0 @@
-Saved and reopened successfully; STEP roundtrip passed.

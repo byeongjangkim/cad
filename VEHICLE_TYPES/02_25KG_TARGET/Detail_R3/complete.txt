@@ -1,1 +1,0 @@
-New structural model generated and STEP roundtrip checked

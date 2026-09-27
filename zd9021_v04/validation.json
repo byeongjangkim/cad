@@ -1,6 +1,0 @@
-{
-  "added_components": 30,
-  "shape_and_step_check": "PASS",
-  "static_overlap_with_existing": "PASS",
-  "limitations": "Assumed equipment dimensions; no mounting hole, payload, suspension motion or electrical validation"
-}
